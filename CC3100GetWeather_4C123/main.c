@@ -97,8 +97,16 @@ Port A, SSI0 (PA2, PA3, PA5, PA6, PA7) sends data to Nokia5110 LCD
 #define SSID_NAME  "DESKTOP-8PU8QII" /* Access point name to connect to */
 #define SEC_TYPE   SL_SEC_TYPE_WPA
 #define PASSKEY    ")406Dq37"  /* Password in case of secure AP */ 
-#define REQUEST "GET /data/2.5/weather?q=Long%20Beach,US&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define REQUEST "GET /data/2.5/weather?q=Long%20Beach&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define REQUEST1 "GET /data/2.5/weather"
+#define REQUEST2 "&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
 #define BAUD_RATE   115200
+#define CR   0x0D
+#define LF   0x0A
+#define BS   0x08
+uint8_t cityName[20];
+uint8_t cityID[20];
+char userResponse;
 //------------UART_Init------------
 // Initialize the UART for 115,200 baud rate (assuming 50 MHz UART clock),
 // 8 bit word length, no parity bits, one stop bit, FIFOs enabled
@@ -131,6 +139,47 @@ void UART_OutString(char *pt){
     pt++;
   }
 }
+
+
+uint8_t UART_InChar(void){
+  while((UART0_FR_R&UART_FR_RXFE) != 0); // wait until the receiving FIFO is not empty
+  return((uint8_t)(UART0_DR_R&0xFF));
+}
+
+void UART_OutChar(uint8_t data){
+  while((UART0_FR_R&UART_FR_TXFF) != 0);
+  UART0_DR_R = data;
+}
+
+void UART_InString(uint8_t *bufPt, uint16_t max) {
+int length=0;
+char character;
+  character = UART_InChar();
+  while(character != CR){
+    if(character == BS){ // back space
+      if(length){
+        bufPt--;
+        length--;
+        UART_OutChar(BS);
+      }
+    }
+    else if(length < max){
+      *bufPt = character;
+      bufPt++;
+      length++;
+      UART_OutChar(character);
+    }
+    character = UART_InChar();
+  }
+  *bufPt = 0; // adding null terminator to the end of the string.
+}
+
+
+void OutCRLF(void){
+  UART_OutChar(CR);
+  UART_OutChar(LF);
+}
+
 
 #define MAX_RECV_BUFF_SIZE  1024
 #define MAX_SEND_BUFF_SIZE  512
@@ -269,8 +318,45 @@ int main(void){
     LED_RedToggle(); //TEST
   }
   UART_OutString("Connected\n\r");
+
   while(1){
 		// display menu
+		UART_OutString("Welcome to Weather Quest");
+		OutCRLF();
+		UART_OutString("Please choose your query criteria:");
+		OutCRLF();
+		UART_OutString("	1. City Name");
+		OutCRLF();
+		UART_OutString("	2. City ID");
+		OutCRLF();
+		UART_OutString("	3. Geographic Coordinates");
+		OutCRLF();
+		UART_OutString("	4. Zip Code");
+		OutCRLF();
+		
+		userResponse = UART_InChar();
+		switch(userResponse){
+			case '1': 
+				UART_OutString("Enter City Name:");
+				UART_InString(cityName, 20);
+				break;
+			case '2': 
+				UART_OutString("Enter City ID");
+				//UART_InString();	
+				break;
+			case '3': 
+				UART_OutString("Enter Geographic Coordinates");
+				UART_InChar();
+				break;
+			case '4': 
+				UART_OutString("Enter Zip Code");
+				UART_InChar();
+				break;
+			default: 
+				break; 
+
+		}
+
     strcpy(HostName,"api.openweathermap.org");
     retVal = sl_NetAppDnsGetHostByName(HostName,
              strlen(HostName),&DestinationIP, SL_AF_INET);
