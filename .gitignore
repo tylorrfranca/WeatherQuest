@@ -1,16 +1,4 @@
-# Keil µVision project ignored files
 
-# Compiled output
-*.axf
-*.bin
-*.hex
-
-# Object files
-*.o
-
-# Dependency files
-*.d
-*.dep
 
 # Build files
 *.crf
@@ -23,21 +11,4 @@
 *.htm
 *.html
 
-# Logs
-*.build_log
 
-# User-specific or session-specific project files
-*.uvguix.*
-*.uvgui.*
-*.uvopt
-
-# Generated or temporary folders
-RTE/
-Listings/
-Objects/
-Debug/
-
-# Miscellaneous
-*.bak
-*.user
-*.orig
