@@ -94,10 +94,10 @@ Port A, SSI0 (PA2, PA3, PA5, PA6, PA7) sends data to Nokia5110 LCD
 #include "../inc/tm4c123gh6pm.h"
 
 // To Do: replace the following three lines with your access point information
-#define SSID_NAME  "LAPTOP-BQSABBDP 0749" /* Access point name to connect to */
+#define SSID_NAME  "DESKTOP-8PU8QII" /* Access point name to connect to */
 #define SEC_TYPE   SL_SEC_TYPE_WPA
-#define PASSKEY    "password"  /* Password in case of secure AP */ 
-#define REQUEST "GET/data/2.5/weather?q=Long%20Beach%20Texas&APPID=9ee4fe405bca689be0ba912f89484f60&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define PASSKEY    ")406Dq37"  /* Password in case of secure AP */ 
+#define REQUEST "GET/data/2.5/weather?q=Long%20Beach%20Texas&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
 #define BAUD_RATE   115200
 //------------UART_Init------------
 // Initialize the UART for 115,200 baud rate (assuming 50 MHz UART clock),
@@ -229,7 +229,7 @@ void Crash(uint32_t time){
 // 1) change Austin Texas to your city
 // 2) metric(for celsius), imperial(for fahrenheit)
 // api.openweathermap.org/data/2.5/weather?q={city name},{state code}&appid={API key}
-//#define REQUEST "GET /data/2.5/weather?q=Long Beach&APPID=7907b2abac2053aed180a74b9310b119&units=metric HTTP/1.1\r\nUser-Agent: Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+//#define REQUEST "GET /data/2.5/weather?q=Long Beach&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent: Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
 // 1) go to http://openweathermap.org/appid#use 
 // 2) Register on the Sign up page
 // 3) get an API key (APPID) replace the 7907b2abac2053aed180a74b9310b119 with your APPID
