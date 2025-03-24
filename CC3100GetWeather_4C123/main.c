@@ -97,7 +97,7 @@ Port A, SSI0 (PA2, PA3, PA5, PA6, PA7) sends data to Nokia5110 LCD
 #define SSID_NAME  "DESKTOP-8PU8QII" /* Access point name to connect to */
 #define SEC_TYPE   SL_SEC_TYPE_WPA
 #define PASSKEY    ")406Dq37"  /* Password in case of secure AP */ 
-#define REQUEST "GET/data/2.5/weather?q=Long%20Beach%20Texas&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define REQUEST "GET /data/2.5/weather?q=Long%20Beach,US&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
 #define BAUD_RATE   115200
 //------------UART_Init------------
 // Initialize the UART for 115,200 baud rate (assuming 50 MHz UART clock),
@@ -270,6 +270,7 @@ int main(void){
   }
   UART_OutString("Connected\n\r");
   while(1){
+		// display menu
     strcpy(HostName,"api.openweathermap.org");
     retVal = sl_NetAppDnsGetHostByName(HostName,
              strlen(HostName),&DestinationIP, SL_AF_INET);

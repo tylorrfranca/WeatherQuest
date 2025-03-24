@@ -65,7 +65,7 @@ __heap_limit
 ;******************************************************************************
         EXTERN  GPIOB_intHandler
         EXTERN  UARTStdioIntHandler
-
+	;	EXTERN  SysTick_Handler 
 ;******************************************************************************
 ;
 ; The vector table.
@@ -88,7 +88,7 @@ __Vectors
         DCD     IntDefaultHandler           ; Debug monitor handler
         DCD     0                           ; Reserved
         DCD     IntDefaultHandler           ; The PendSV handler
-        DCD     IntDefaultHandler           ; The SysTick handler
+        DCD     IntDefaultHandler             ; The SysTick handler
         DCD     IntDefaultHandler           ; GPIO Port A
         DCD     GPIOB_intHandler            ; GPIO Port B
         DCD     IntDefaultHandler           ; GPIO Port C
