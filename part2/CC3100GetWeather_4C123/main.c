@@ -77,6 +77,10 @@ P3.10 PF1 UNUSED     NA           P4.10 PF4 UNUSED      OUT(see R75)
 UART0 (PA1, PA0) sends data to the PC via the USB debug cable, 115200 baud rate
 Port A, SSI0 (PA2, PA3, PA5, PA6, PA7) sends data to Nokia5110 LCD
 
+// Weather QUest 
+// CECS447 Project 4 Part 2 - Weather Quest 
+// Description: Weather Quest API connection, with 4 search query options. 
+// Student Name: Tylor Franca, Ivan Martinez, Diego Davalos, Anthony Keroles
 */
 #include "..\cc3100\simplelink\include\simplelink.h"
 #include "inc/hw_memmap.h"
@@ -91,21 +95,31 @@ Port A, SSI0 (PA2, PA3, PA5, PA6, PA7) sends data to Nokia5110 LCD
 #include "application_commands.h"
 #include "LED.h"
 #include <string.h>
+#include <stdio.h>
 #include "../inc/tm4c123gh6pm.h"
 
 // To Do: replace the following three lines with your access point information
-#define SSID_NAME  "DESKTOP-8PU8QII" /* Access point name to connect to */
+#define SSID_NAME  "DEVICE21-0189" /* Access point name to connect to */
 #define SEC_TYPE   SL_SEC_TYPE_WPA
-#define PASSKEY    ")406Dq37"  /* Password in case of secure AP */ 
-#define REQUEST "GET /data/2.5/weather?q=Long%20Beach&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
-#define REQUEST1 "GET /data/2.5/weather"
-#define REQUEST2 "&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define PASSKEY    "p6Y0)269"  /* Password in case of secure AP */ 
+#define REQUEST_NAME "GET /data/2.5/weather?q=%s&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define REQUEST_ID "GET /data/2.5/weather?id=%s&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define REQUEST_ZIP "GET /data/2.5/weather?zip=%s&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+#define REQUEST_LATLON "GET /data/2.5/weather?lat=%s&lon=%s&APPID=546a4a3acbad6ae84fabb60fde55c932&units=metric HTTP/1.1\r\nUser-Agent:Keil\r\nHost:api.openweathermap.org\r\nAccept: */*\r\n\r\n"
+
 #define BAUD_RATE   115200
 #define CR   0x0D
 #define LF   0x0A
 #define BS   0x08
 uint8_t cityName[20];
+uint8_t formattedCityName[20];
 uint8_t cityID[20];
+uint8_t formattedcityID[20];
+uint8_t cityZip[20];
+uint8_t formattedcityZip[20];
+uint8_t latitude[15];
+uint8_t longitude[15];
+
 char userResponse;
 //------------UART_Init------------
 // Initialize the UART for 115,200 baud rate (assuming 50 MHz UART clock),
@@ -272,6 +286,42 @@ void Crash(uint32_t time){
     LED_RedToggle();
   }
 }
+
+void formatName(uint8_t *dest, const uint8_t *src) {
+    while (*src) {
+        if (*src == ' ') {
+            strcpy((char *)dest, "%20");  // explicit cast here
+            dest += 3;
+        } else {
+            *dest = *src;
+            dest++;
+        }
+        src++;
+    }
+    *dest = '\0';
+}
+// Helper function: simple string extraction from JSON response
+int extractJSONValue(const char* json, const char* key, char* dest, int maxlen) {
+    char *pos = strstr(json, key);
+    if (!pos) return -1;
+    
+    pos = strchr(pos, ':'); // Find colon
+    if (!pos) return -1;
+    
+    pos++; // Move after colon
+    
+    // skip spaces, quotes
+    while(*pos == ' ' || *pos == '\"') pos++;
+    
+    int i = 0;
+    while(*pos && *pos != ',' && *pos != '\"' && *pos != '}' && i < maxlen-1){
+        dest[i++] = *pos++;
+    }
+    dest[i] = 0;
+    return 0;
+}
+
+
 /*
  * Application's entry point
  */
@@ -292,6 +342,7 @@ int main(void){
   initClk();        // PLL 50 MHz
   UART_Init();      // Send data to PC, 115200 bps
   LED_Init();       // initialize LaunchPad I/O 
+	
   UART_OutString("Weather App\n\r");
   UART_OutString("Configuring SimpleLink...\n\r");
 
@@ -329,34 +380,53 @@ int main(void){
 		OutCRLF();
 		UART_OutString("	2. City ID");
 		OutCRLF();
-		UART_OutString("	3. Geographic Coordinates");
+		UART_OutString("	3. Zip Code");
 		OutCRLF();
-		UART_OutString("	4. Zip Code");
+		UART_OutString("	4. Coordinate Location");
 		OutCRLF();
 		
 		userResponse = UART_InChar();
 		switch(userResponse){
 			case '1': 
 				UART_OutString("Enter City Name:");
+				OutCRLF();
 				UART_InString(cityName, 20);
+				formatName(formattedCityName, cityName);
+				snprintf(SendBuff, sizeof(SendBuff), REQUEST_NAME, formattedCityName);
 				break;
 			case '2': 
-				UART_OutString("Enter City ID");
-				//UART_InString();	
+				UART_OutString("Enter City ID:");
+				OutCRLF();
+				UART_InString(cityID, 20);
+				OutCRLF();
+				snprintf(SendBuff, sizeof(SendBuff), REQUEST_ID, cityID);
 				break;
 			case '3': 
-				UART_OutString("Enter Geographic Coordinates");
-				UART_InChar();
+				UART_OutString("Enter Zip Code:");
+				OutCRLF();
+				UART_InString(cityZip, 20);
+				OutCRLF();
+				formatName(formattedcityZip, cityZip);
+				snprintf(SendBuff, sizeof(SendBuff), REQUEST_ZIP, formattedcityZip);
 				break;
 			case '4': 
-				UART_OutString("Enter Zip Code");
-				UART_InChar();
+				UART_OutString("Enter Latitude:\r\n");
+				OutCRLF();
+				UART_InString(latitude, 15);
+				OutCRLF();
+
+				UART_OutString("Enter Longitude:\r\n");
+				OutCRLF();
+				UART_InString(longitude, 15);
+				OutCRLF();
+			  snprintf(SendBuff, sizeof(SendBuff), REQUEST_LATLON, latitude, longitude);
 				break;
 			default: 
 				break; 
 
 		}
-
+		
+		
     strcpy(HostName,"api.openweathermap.org");
     retVal = sl_NetAppDnsGetHostByName(HostName,
              strlen(HostName),&DestinationIP, SL_AF_INET);
@@ -370,19 +440,56 @@ int main(void){
         retVal = sl_Connect(SockID, ( SlSockAddr_t *)&Addr, ASize);
       }
       if((SockID >= 0)&&(retVal >= 0)){
-        strcpy(SendBuff,REQUEST); 
         sl_Send(SockID, SendBuff, strlen(SendBuff), 0);// Send the HTTP GET 
         sl_Recv(SockID, Recvbuff, MAX_RECV_BUFF_SIZE, 0);// Receive response 
         sl_Close(SockID);
         LED_GreenOn();
-        UART_OutString("\r\n\r\n");
-        UART_OutString(Recvbuff);  UART_OutString("\r\n");
+				char CityName[30], temperature[10], tempMin[10], tempMax[10], humidity[10], condition[30];
+				UART_OutString("\r\n\r\n");
+        UART_OutString(Recvbuff);  
+				UART_OutString("\r\n");
+				if(extractJSONValue(Recvbuff, "\"name\"", CityName, 30)==0 &&
+					 extractJSONValue(Recvbuff, "\"temp\"", temperature, 10)==0 &&
+					 extractJSONValue(Recvbuff, "\"temp_min\"", tempMin, 10)==0 &&
+					 extractJSONValue(Recvbuff, "\"temp_max\"", tempMax, 10)==0 &&
+					 extractJSONValue(Recvbuff, "\"humidity\"", humidity, 10)==0 &&
+					 extractJSONValue(Recvbuff, "\"main\"", condition, 30)==0){
+
+						UART_OutString("\r\n");
+						UART_OutString(CityName);
+						UART_OutString("\r\n");
+
+						UART_OutString("Temp: ");
+						UART_OutString(temperature);
+						UART_OutString(" F\r\n");
+
+						UART_OutString("Min: ");
+						UART_OutString(tempMin);
+						UART_OutString(" F\r\n");
+
+						UART_OutString("Max: ");
+						UART_OutString(tempMax);
+						UART_OutString(" F\r\n");
+
+						UART_OutString("Humidity: ");
+						UART_OutString(humidity);
+						UART_OutString("%\r\n");
+
+						UART_OutString("Condition: ");
+						UART_OutString(condition);
+						UART_OutString("\r\n");
+						}
+				else{
+					UART_OutString("Unable to parse weather data.\r\n");
+					}
+				}
       }
-    }
+    
     while(Board_Input()==0){}; // wait for touch
     LED_GreenOff();
   }
 }
+
 
 /*!
     \brief This function puts the device in its default state. It:
